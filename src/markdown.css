@@ -1,0 +1,44 @@
+:host { display: block; min-width: 0; max-width: 100%; flex: 1 1 0%; color: inherit; font: inherit; line-height: 2; white-space: normal; text-align: start; }
+* { box-sizing: border-box; }
+.markdown { overflow-x: auto; overflow-wrap: anywhere; padding: 0 1px; }
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+p { margin: 0 0 .65em; }
+h1,h2,h3,h4,h5,h6 { margin: 1em 0 .5em; font-weight: 600; line-height: 1.35; }
+h1 { font-size: 1.5em; } h2 { font-size: 1.3em; } h3 { font-size: 1.15em; } h4,h5,h6 { font-size: 1em; }
+ul,ol { padding-left: 1.7em; margin: .3em 0 .7em; }
+li { margin: .15em 0; } li > p { margin: .15em 0; } li > ul,li > ol { margin: .15em 0; }
+code,kbd { font: .92em/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; background: #edf1f7; color: #9d2852; border-radius: 4px; padding: .12em .35em; overflow-wrap: anywhere; }
+pre { margin: .7em 0; padding: 12px; overflow-x: auto; contain: inline-size; background: #f5f7fa; border: 1px solid #e5e9ef; border-radius: 6px; line-height: 1.55; white-space: pre; }
+pre code { padding: 0; background: transparent; color: inherit; white-space: pre; overflow-wrap: normal; }
+blockquote { margin: .6em 0; padding: .15em 0 .15em .9em; border-left: 3px solid #b8c6df; color: #66758d; }
+blockquote p:last-child { margin: 0; }
+table { border-collapse: collapse; margin: .65em 0; font: inherit; }
+th,td { border: 1px solid #dce2eb; padding: 6px 9px; text-align: start; }
+th { background: #f2f5fa; font-weight: 600; } tr:nth-child(even) { background: #fafbfd; }
+a { color: #2563c7; text-decoration: underline; text-underline-offset: 2px; }
+img { max-width: 100%; height: auto; vertical-align: middle; }
+hr { border: 0; border-top: 1px solid #dce2eb; margin: 1em 0; }
+.task-box { color: #376acf; margin-right: .15em; }
+.code-inline { display: inline; }
+.code-inline:focus-visible { outline: 1px solid #39746b; outline-offset: 2px; border-radius: 3px; }
+.code-block { position: relative; min-width: 0; margin: .7em 0; }
+.code-block > pre { margin: 0; }
+.code-copy { position: absolute; z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 2px; border: 1px solid #d6dfdc; border-radius: 4px; background: #fff; color: #586d66; font: 11px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; white-space: nowrap; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .1s; user-select: none; }
+.code-inline > .code-copy { position: fixed; inset: auto; margin: 0; padding: 1px; width: 20px; height: 20px; }
+.code-inline > .code-copy:not(:popover-open) { display: none; }
+.code-inline > .code-copy:popover-open { display: inline-flex; opacity: 1; pointer-events: auto; }
+.code-block > .code-copy { inset-inline-end: 7px; top: 7px; }
+.code-inline:hover > .code-copy, .code-block:hover > .code-copy, .code-inline:focus-within > .code-copy, .code-block:focus-within > .code-copy, .code-copy[data-state="success"], .code-copy[data-state="error"] { opacity: 1; pointer-events: auto; }
+.code-copy:hover { background: #f2f6f4; border-color: #94aca3; }
+.code-copy:focus-visible { outline: 2px solid #39746b; outline-offset: 2px; }
+.code-copy[data-state="success"] { color: #2a715c; }
+.code-copy[data-state="error"] { color: #b34b3d; }
+.code-copy[aria-disabled="true"] { cursor: wait; }
+.copy-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; font-size: 14px; line-height: 1; }
+.copy-icon svg { width: 14px; height: 14px; color: #64748b; }
+.copy-icon-windows { display: inline-block; position: relative; color: #555; font: 14px/1 "Segoe Fluent Icons", "Segoe MDL2 Assets"; }
+.copy-icon-windows::before { content: "\e8c8"; }
+.copy-icon-windows::after { content: "\e8c8"; position: absolute; inset: 0; color: #0078d4; clip-path: inset(0 0 20% 32%); }
+.copy-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (hover: none) { .code-copy { opacity: 1; pointer-events: auto; } }

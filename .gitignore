@@ -1,0 +1,15 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+coverage/
+.cache/
+tmp/
+artifacts/
+screenshots/
+*.log
+*.tmp
+*.temp
+*.zip
+.DS_Store
+Thumbs.db

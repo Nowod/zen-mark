@@ -1,0 +1,23 @@
+{
+  "name": "zen-mark",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "为禅道用例的前置条件、步骤、预期提供 Markdown 阅读视图。",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:all": "npm run build && npm run check && npm test && npm run test:browser",
+    "icons": "node scripts/icons.mjs"
+  },
+  "dependencies": {
+    "dompurify": "3.4.17",
+    "marked": "18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1"
+  }
+}

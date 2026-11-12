@@ -1,0 +1,31 @@
+:root { color-scheme: light dark; color: #2d3534; background: #fff; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; }
+* { box-sizing: border-box; }
+body { width: 280px; margin: 0; }
+main { padding: 18px; }
+h1 { margin: 0 0 16px; font-size: 16px; font-weight: 600; }
+.site { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; cursor: pointer; }
+.site > span:first-child { flex: 1; min-width: 0; }
+strong { font-weight: 500; }
+small { display: block; font-size: 11px; color: #7a8582; }
+#site-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.site input { position: absolute; opacity: 0; width: 34px; height: 20px; right: 18px; cursor: pointer; }
+.switch { width: 34px; height: 20px; border-radius: 12px; background: #c8d0ce; position: relative; pointer-events: none; }
+.switch::before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; border-radius: 50%; background: #fff; transition: transform .12s; }
+.site input:checked + .switch { background: #39746b; }
+.site input:checked + .switch::before { transform: translateX(14px); }
+.site input:focus-visible + .switch { outline: 2px solid #39746b; outline-offset: 3px; }
+.site input:disabled + .switch { opacity: .5; }
+fieldset { border: 0; border-top: 1px solid #e9edeb; margin: 0; padding: 10px 0 0; }
+legend { padding: 0 6px 0 0; font-size: 11px; color: #7a8582; }
+fieldset label { display: flex; align-items: center; gap: 9px; padding: 7px 0; cursor: pointer; }
+fieldset input { width: 15px; height: 15px; margin: 0; accent-color: #39746b; }
+fieldset:disabled { opacity: .6; }
+footer { font-size: 11px; color: #7a8582; margin-top: 12px; }
+#status { font-size: 12px; color: #ad4436; margin: 9px 0 0; }
+#status:empty { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root { background: #222827; color: #e3eae7; }
+  small,legend,footer { color: #9fafa8; }
+  fieldset { border-color: #3b4741; }
+  #status { color: #ffb3a9; }
+}
