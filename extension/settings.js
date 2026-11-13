@@ -1,4 +1,10 @@
-export const OPTION_DEFAULTS = Object.freeze({ precondition: true, steps: true, bugSteps: true, copyCase: true, doubleSpacing: true });
+export const LINE_HEIGHTS = Object.freeze(["default", 1.5, 2, 2.5, 3]);
+export const OPTION_DEFAULTS = Object.freeze({ precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 });
+export const BOOLEAN_OPTION_KEYS = Object.freeze(Object.keys(OPTION_DEFAULTS).filter(key => typeof OPTION_DEFAULTS[key] === "boolean"));
+
+export function validOptions(value) {
+  return Boolean(value && BOOLEAN_OPTION_KEYS.every(key => typeof value[key] === "boolean") && LINE_HEIGHTS.includes(value.lineHeight));
+}
 
 export function webOrigin(value) {
   try {
@@ -13,11 +19,15 @@ export function hostPattern(origin) {
 }
 
 export function normalizeSettings(value) {
-  // Keep the stored fields key so existing selections need no migration.
+  // Preserve the fields storage key and map the former spacing checkbox on read.
+  const fields = value?.fields;
+  const oldLineHeight = fields?.doubleSpacing === false ? "default" : OPTION_DEFAULTS.lineHeight;
   return {
     enabledOrigins: [...new Set((Array.isArray(value?.enabledOrigins) ? value.enabledOrigins : [])
       .map(webOrigin).filter(Boolean))],
-    fields: Object.fromEntries(Object.entries(OPTION_DEFAULTS).map(([key, fallback]) =>
-      [key, typeof value?.fields?.[key] === "boolean" ? value.fields[key] : fallback]))
+    fields: {
+      ...Object.fromEntries(BOOLEAN_OPTION_KEYS.map(key => [key, typeof fields?.[key] === "boolean" ? fields[key] : OPTION_DEFAULTS[key]])),
+      lineHeight: LINE_HEIGHTS.includes(fields?.lineHeight) ? fields.lineHeight : oldLineHeight
+    }
   };
 }

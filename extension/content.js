@@ -35,7 +35,7 @@
       state = null;
     }
     if (state) {
-      state.host.toggleAttribute("data-zen-mark-double-spacing", options.doubleSpacing);
+      state.host.setAttribute("data-zen-mark-line-height", String(options.lineHeight));
       for (const node of [...element.childNodes]) {
         if (node !== state.source && node !== state.host && !Targets.stepNumber(node, element)) state.source.append(node);
       }
@@ -54,7 +54,7 @@
       // ZenTao reserves direct span children of .step-id for muted step numbers.
       const host = document.createElement("div");
       host.setAttribute("data-zen-mark-view", kind);
-      host.toggleAttribute("data-zen-mark-double-spacing", options.doubleSpacing);
+      host.setAttribute("data-zen-mark-line-height", String(options.lineHeight));
       const shadow = host.attachShadow({ mode: "open" });
       shadow.adoptedStyleSheets = [styles];
       const body = document.createElement("div");

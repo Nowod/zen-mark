@@ -2,13 +2,16 @@ import assert from "node:assert/strict";
 import { context, worker, page, popup, errors, poll, launch, previews, preview, rendered, text, setFields, enabled, go, check } from "./harness.mjs";
 
 export async function runSettingsTests() {
-  await check("网站默认关闭，渲染与功能选项默认都勾选", async () => {
+  await check("网站默认关闭，渲染与复制默认开启，正文行距为 2 倍", async () => {
     assert.equal(await previews(), 0);
     assert.equal(await popup.locator("#site-name").textContent(), "zentao.test");
     assert.equal(await popup.locator("#site-enabled").isChecked(), false);
-    assert.deepEqual(await popup.locator("#fields input").evaluateAll(inputs => inputs.map(input => [input.id, input.checked])), [["field-precondition", true], ["field-steps", true], ["field-bugSteps", true], ["field-copyCase", true], ["field-doubleSpacing", true]]);
+    assert.deepEqual(await popup.locator("#fields input").evaluateAll(inputs => inputs.map(input => [input.id, input.checked])), [["field-precondition", true], ["field-steps", true], ["field-bugSteps", true], ["field-copyCase", true]]);
     assert.deepEqual(await popup.locator("#fields > .option-group > legend").allTextContents(), ["渲染内容", "辅助功能"]);
     assert.equal(await popup.locator('label:has(#field-steps)').textContent(), "步骤与预期");
+    assert.equal(await popup.locator("#field-lineHeight").inputValue(), "2");
+    assert.deepEqual(await popup.locator("#field-lineHeight option").evaluateAll(options => options.map(option => [option.value, option.textContent])),
+      [["default", "默认"], ["1.5", "1.5 倍"], ["2", "2 倍"], ["2.5", "2.5 倍"], ["3", "3 倍"]]);
     assert.deepEqual(await worker.evaluate(() => chrome.storage.local.get(null)), {});
   }, false);
 
@@ -58,12 +61,12 @@ export async function runSettingsTests() {
     assert.equal(await preview("precondition").count(), 0);
   });
 
-  await check("可选复制与双倍行距即时生效并保存，详情页按钮紧邻用例标题", async () => {
+  await check("正文行距五个档位即时生效并保存，复制开关与标题旁按钮独立", async () => {
     await go("/zentao/testcase-view-1.html");
     await rendered("step-one");
     await popup.reload(); await popup.waitForFunction(() => !document.querySelector("#fields").disabled);
     assert.equal(await popup.locator("#field-copyCase").isChecked(), true);
-    assert.equal(await popup.locator("#field-doubleSpacing").isChecked(), true);
+    assert.equal(await popup.locator("#field-lineHeight").inputValue(), "2");
     const positions = await page.evaluate(() => {
       const title = document.querySelector(".detail-header > .entity-title > .entity-title-text").getBoundingClientRect();
       const button = document.querySelector("[data-zen-mark-copy-case]").getBoundingClientRect();
@@ -71,27 +74,29 @@ export async function runSettingsTests() {
     });
     assert.ok(positions.gap >= 0 && positions.gap < 32 && positions.center < 4, `Copy button stays beside the title: ${JSON.stringify(positions)}`);
     const spacing = () => preview("step-one").locator(".markdown > p").evaluate(node => ({ line: getComputedStyle(node).lineHeight, size: getComputedStyle(node).fontSize }));
-    const doubled = await spacing();
-    assert.equal(parseFloat(doubled.line), parseFloat(doubled.size) * 2);
     const inherited = await page.locator("#step-one").evaluate(node => getComputedStyle(node).lineHeight);
-    await popup.locator("#field-doubleSpacing").uncheck();
-    await poll(spacing, value => value.line === inherited, "page line-height restored without refreshing");
+    for (const lineHeight of ["default", "1.5", "2", "2.5", "3"]) {
+      await popup.locator("#field-lineHeight").selectOption(lineHeight);
+      await poll(spacing, value => lineHeight === "default" ? value.line === inherited : parseFloat(value.line) === parseFloat(value.size) * Number(lineHeight), `line-height ${lineHeight} applied without refreshing`);
+    }
     await popup.locator("#field-copyCase").uncheck();
     await poll(() => page.locator("[data-zen-mark-copy-case]").count(), count => count === 0, "detail copy hidden");
     await go(); await rendered("step-one");
     assert.equal(await page.locator("[data-zen-mark-copy-case]").count(), 0);
-    const modalInherited = await page.locator("#step-one").evaluate(node => getComputedStyle(node).lineHeight);
-    assert.equal(await preview("expect-one").locator(".markdown > p").evaluate(node => getComputedStyle(node).lineHeight), modalInherited);
+    const newSpacing = await preview("expect-one").locator(".markdown > p").evaluate(node => ({ line: getComputedStyle(node).lineHeight, size: getComputedStyle(node).fontSize }));
+    assert.equal(parseFloat(newSpacing.line), parseFloat(newSpacing.size) * 3);
     await popup.reload(); await popup.waitForFunction(() => !document.querySelector("#fields").disabled);
     assert.equal(await popup.locator("#field-copyCase").isChecked(), false);
-    assert.equal(await popup.locator("#field-doubleSpacing").isChecked(), false);
+    assert.equal(await popup.locator("#field-lineHeight").inputValue(), "3");
+    assert.equal(await worker.evaluate(async () => (await chrome.storage.local.get("settings")).settings.fields.lineHeight), 3);
     await popup.locator("#field-copyCase").check();
     await poll(() => page.locator("[data-zen-mark-copy-case]").count(), count => count === 1, "execution copy restored");
-    await popup.locator("#field-doubleSpacing").check();
-    await poll(() => preview("expect-one").locator(".markdown > p").evaluate(node => ({ line: getComputedStyle(node).lineHeight, size: getComputedStyle(node).fontSize })),
-      value => parseFloat(value.line) === parseFloat(value.size) * 2, "double line-height restored");
+    await popup.locator("#field-lineHeight").selectOption("default");
+    const modalInherited = await page.locator("#expect-one").evaluate(node => getComputedStyle(node).lineHeight);
+    await poll(() => preview("expect-one").locator(".markdown > p").evaluate(node => getComputedStyle(node).lineHeight), value => value === modalInherited, "page line-height restored");
     await go("/zentao/testcase-view-1.html"); await rendered("step-one");
     assert.equal(await page.locator(".detail-header > .entity-title > [data-zen-mark-copy-case]").count(), 1);
+    assert.equal((await spacing()).line, inherited);
   });
 
   await check("跨端口与其他网站未开启时不渲染，设置不携带用例内容", async () => {
@@ -142,7 +147,7 @@ export async function runSettingsTests() {
 
 export async function runPersistenceTests() {
   await check("刷新、重启浏览器后保留网站和渲染选项的选择", async () => {
-    await setFields({ precondition: false, steps: true });
+    await setFields({ precondition: false, steps: true, lineHeight: 2.5 });
     await page.reload(); await rendered("step-one"); await rendered("precondition", false);
     await context.close(); await launch();
     try { await rendered("step-one"); await rendered("precondition", false); }
@@ -152,6 +157,9 @@ export async function runPersistenceTests() {
     }
     assert.equal(await popup.locator("#field-precondition").isChecked(), false);
     assert.equal(await popup.locator("#field-steps").isChecked(), true);
+    assert.equal(await popup.locator("#field-lineHeight").inputValue(), "2.5");
+    const spacing = await preview("expect-one").locator(".markdown > p").evaluate(node => ({ line: getComputedStyle(node).lineHeight, size: getComputedStyle(node).fontSize }));
+    assert.equal(parseFloat(spacing.line), parseFloat(spacing.size) * 2.5);
     assert.equal(await popup.locator("#site-enabled").isChecked(), true);
   });
 }

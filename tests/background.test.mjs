@@ -39,7 +39,7 @@ test("真实后台消息：网站授权、动态注册、渲染选项及来源�
       const status = await send({ type: "STATUS", origin: "https://a.test" });
       assert.deepEqual(storageAccess, { accessLevel: "TRUSTED_CONTEXTS" });
       assert.equal(status.enabled, false);
-      assert.deepEqual(status.settings, { enabledOrigins: [], fields: { precondition: true, steps: true, bugSteps: true, copyCase: true, doubleSpacing: true } });
+      assert.deepEqual(status.settings, { enabledOrigins: [], fields: { precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 } });
       assert.equal(scripts.size, 0);
       assert.equal((await send({ type: "GET_STATE" }, content())).enabled, false);
       assert.equal((await send({ type: "STATUS", origin: "https://a.test" }, { ...popup, tab: { id: 2 } })).ok, true);
@@ -69,13 +69,16 @@ test("真实后台消息：网站授权、动态注册、渲染选项及来源�
       assert.equal((await send({ type: "GET_STATE" }, sender)).enabled, false);
       assert.equal((await send({ type: "GET_STATE" }, popup)).enabled, false);
     });
-    await t.test("渲染与功能选项独立保存，不接受缺失或非布尔参数", async () => {
-      const saved = await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false } });
-      assert.deepEqual(saved.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false });
+    await t.test("渲染选项与行距独立保存，拒绝缺失或非法参数", async () => {
+      const saved = await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true, bugSteps: false, copyCase: false, lineHeight: "default" } });
+      assert.deepEqual(saved.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, lineHeight: "default" });
       const snapshot = structuredClone(store);
       assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false } })).error, "INVALID_SETTING");
       assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true } })).error, "INVALID_SETTING");
-      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: "false", steps: true, bugSteps: false, copyCase: false, doubleSpacing: false } })).error, "INVALID_SETTING");
+      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: "false", steps: true, bugSteps: false, copyCase: false, lineHeight: "default" } })).error, "INVALID_SETTING");
+      for (const lineHeight of [0, 1.75, 4, "2.5", false]) {
+        assert.equal((await send({ type: "SET_FIELDS", fields: { ...saved.settings.fields, lineHeight } })).error, "INVALID_SETTING");
+      }
       assert.deepEqual(store, snapshot);
     });
     await t.test("写入失败时恢复原动态注册；后续请求仍可正常工作", async () => {
@@ -94,7 +97,7 @@ test("真实后台消息：网站授权、动态注册、渲染选项及来源�
       const result = await send({ type: "SET_SITE", origin: "https://a.test", enabled: false });
       assert.equal(result.enabled, false);
       assert.equal(scripts.size, 0);
-      assert.deepEqual(result.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false });
+      assert.deepEqual(result.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, lineHeight: "default" });
     });
     await t.test("撤销主机权限后不再视为启用，重新同步会清理注册", async () => {
       await send({ type: "SET_SITE", origin: "https://a.test", enabled: true });

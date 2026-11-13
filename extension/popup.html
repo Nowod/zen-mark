@@ -25,7 +25,16 @@
       <fieldset class="option-group">
         <legend>辅助功能</legend>
         <label><input id="field-copyCase" type="checkbox">整体复制</label>
-        <label><input id="field-doubleSpacing" type="checkbox">双倍行距</label>
+        <label class="line-height-row">
+          <span>正文行距</span>
+          <select id="field-lineHeight">
+            <option value="default">默认</option>
+            <option value="1.5">1.5 倍</option>
+            <option value="2">2 倍</option>
+            <option value="2.5">2.5 倍</option>
+            <option value="3">3 倍</option>
+          </select>
+        </label>
       </fieldset>
     </fieldset>
     <p id="status" role="status" aria-live="polite"></p>

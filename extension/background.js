@@ -1,4 +1,4 @@
-import { OPTION_DEFAULTS, normalizeSettings, webOrigin, hostPattern } from "./settings.js";
+import { validOptions, normalizeSettings, webOrigin, hostPattern } from "./settings.js";
 
 const scriptId = "zen-mark-sites";
 const js = ["vendor.js", "targets.js", "content.js"];
@@ -71,7 +71,7 @@ async function handle(message, sender) {
   const origin = webOrigin(message?.origin);
   if (message.type === "STATUS") return { settings: config, enabled: Boolean(origin && config.enabledOrigins.includes(origin) && await allowed(origin)) };
   if (message.type === "SET_FIELDS") {
-    if (!message.fields || Object.keys(OPTION_DEFAULTS).some(key => typeof message.fields[key] !== "boolean")) throw new Error("INVALID_SETTING");
+    if (!validOptions(message.fields)) throw new Error("INVALID_SETTING");
     const next = normalizeSettings({ ...config, fields: message.fields });
     await chrome.storage.local.set({ settings: next });
     await broadcast();

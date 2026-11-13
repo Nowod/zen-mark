@@ -1,7 +1,6 @@
-import { OPTION_DEFAULTS, hostPattern, webOrigin } from "./settings.js";
+import { BOOLEAN_OPTION_KEYS, OPTION_DEFAULTS, hostPattern, webOrigin } from "./settings.js";
 
 const $ = id => document.getElementById(id);
-const optionKeys = Object.keys(OPTION_DEFAULTS);
 let origin = null;
 let settings = null;
 let enabled = false;
@@ -20,7 +19,8 @@ function render(result) {
   $("site-enabled").checked = enabled;
   $("site-enabled").disabled = busy || !origin;
   $("fields").disabled = busy || !settings;
-  for (const key of optionKeys) $("field-" + key).checked = settings?.fields[key] ?? OPTION_DEFAULTS[key];
+  for (const key of BOOLEAN_OPTION_KEYS) $("field-" + key).checked = settings?.fields[key] ?? OPTION_DEFAULTS[key];
+  $("field-lineHeight").value = String(settings?.fields.lineHeight ?? OPTION_DEFAULTS.lineHeight);
 }
 
 function beginUpdate() {
@@ -47,7 +47,9 @@ $("site-enabled").addEventListener("change", async event => {
 
 $("fields").addEventListener("change", async () => {
   if (busy) return;
-  const options = Object.fromEntries(optionKeys.map(key => [key, $("field-" + key).checked]));
+  const options = Object.fromEntries(BOOLEAN_OPTION_KEYS.map(key => [key, $("field-" + key).checked]));
+  const lineHeight = $("field-lineHeight").value;
+  options.lineHeight = lineHeight === "default" ? "default" : Number(lineHeight);
   beginUpdate();
   try { render(await send("SET_FIELDS", { fields: options })); }
   catch { $("status").textContent = "保存失败，请重试"; }

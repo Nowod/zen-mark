@@ -21,6 +21,9 @@ fieldset { min-width: 0; border: 0; margin: 0; padding: 0; }
 legend { padding: 0 6px 0 0; font-size: 11px; color: #7a8582; }
 .option-group label { display: flex; align-items: center; gap: 9px; margin: 0 -4px; padding: 6px 4px; border-radius: 4px; cursor: pointer; }
 .option-group input { width: 15px; height: 15px; margin: 0; accent-color: #39746b; }
+.option-group .line-height-row { justify-content: space-between; }
+.line-height-row select { width: 90px; min-height: 26px; padding: 2px 6px; border: 1px solid #c8d0ce; border-radius: 4px; color: inherit; background: #fff; font: inherit; }
+.line-height-row select:focus-visible { outline: 2px solid #39746b; outline-offset: 2px; }
 #fields:disabled { opacity: .6; }
 #fields:not(:disabled) label:hover { background: #f2f6f4; }
 #status { font-size: 12px; color: #ad4436; margin: 9px 0 0; }
@@ -30,5 +33,6 @@ legend { padding: 0 6px 0 0; font-size: 11px; color: #7a8582; }
   small,legend { color: #9fafa8; }
   .option-group { border-color: #3b4741; }
   #fields:not(:disabled) label:hover { background: #2d3834; }
+  .line-height-row select { background: #222827; border-color: #52615b; }
   #status { color: #ffb3a9; }
 }

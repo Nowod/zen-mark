@@ -17,7 +17,7 @@ manifest.host_permissions = ["https://zentao.test/*", "http://zentao-http.test/*
 await writeFile(join(extension, "manifest.json"), JSON.stringify(manifest));
 const fixtures = Object.fromEntries(await Promise.all(["execution", "detail", "classic", "edit", "bug"].map(async name =>
   [name, await readFile(join(root, `tests/fixtures/${name}.html`), "utf8")])));
-const defaults = { precondition: true, steps: true, bugSteps: true, copyCase: true, doubleSpacing: true };
+const defaults = { precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 };
 const testFilter = process.env.ZEN_MARK_TEST_FILTER ? new RegExp(process.env.ZEN_MARK_TEST_FILTER) : null;
 let context;
 let worker;

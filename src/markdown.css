@@ -1,5 +1,8 @@
 :host { display: block; min-width: 0; max-width: 100%; flex: 1 1 0%; color: inherit; font: inherit; line-height: inherit; white-space: normal; text-align: start; }
-:host([data-zen-mark-double-spacing]) { line-height: 2; }
+:host([data-zen-mark-line-height="1.5"]) { line-height: 1.5; }
+:host([data-zen-mark-line-height="2"]) { line-height: 2; }
+:host([data-zen-mark-line-height="2.5"]) { line-height: 2.5; }
+:host([data-zen-mark-line-height="3"]) { line-height: 3; }
 * { box-sizing: border-box; }
 .markdown { overflow-x: auto; overflow-wrap: anywhere; padding: 0 1px; }
 .markdown > :first-child { margin-top: 0; }
