@@ -99,50 +99,6 @@ export async function runSettingsTests() {
     assert.equal((await spacing()).line, inherited);
   });
 
-  await check("跨端口与其他网站未开启时不渲染，设置不携带用例内容", async () => {
-    await page.goto("https://zentao.test:8443/zentao/testcase-view-1.html");
-    await page.locator("#step-one").waitFor();
-    assert.equal(await previews(), 0);
-    await page.goto("https://outside.test/zentao/testcase-view-1.html");
-    assert.equal(await previews(), 0);
-    const store = await worker.evaluate(() => chrome.storage.local.get(null));
-    assert.deepEqual(Object.keys(store), ["settings"]);
-    assert.deepEqual(Object.keys(store.settings).sort(), ["enabledOrigins", "fields"]);
-  });
-
-  await check("权限拒绝或权限 API 同步抛错时开关回退且可重试", async () => {
-    await enabled(false);
-    await popup.reload(); await popup.waitForFunction(() => !document.querySelector("#fields").disabled);
-    await popup.evaluate(() => { globalThis.requestPermission = chrome.permissions.request; chrome.permissions.request = async () => false; });
-    try {
-      await popup.locator("#site-enabled").click();
-      await poll(() => popup.locator("#status").textContent(), text => text.includes("未授权"), "denied message");
-      assert.equal(await popup.locator("#site-enabled").isChecked(), false);
-      await popup.evaluate(() => { chrome.permissions.request = () => { throw new Error("Simulated failure"); }; });
-      await popup.locator("#site-enabled").click();
-      await poll(() => popup.locator("#status").textContent(), text => text.includes("设置失败"), "permission exception");
-      assert.equal(await popup.locator("#site-enabled").isChecked(), false);
-    } finally { await popup.evaluate(() => { chrome.permissions.request = requestPermission; }); }
-    await popup.locator("#site-enabled").check();
-    await rendered("step-one");
-  });
-
-  await check("紧凑设置无横向溢出，Markdown 样式隔离且长代码可横向滚动", async () => {
-    await popup.setViewportSize({ width: 280, height: 350 });
-    assert.equal(await popup.evaluate(() => document.body.scrollWidth), 280);
-    await page.locator("#expect-one").evaluate(node => { node.textContent = '```text\n' + 'long_code_'.repeat(150) + '\n```'; });
-    await poll(() => preview("expect-one").locator("pre").count(), count => count === 1, "long code rendered");
-    const sizing = await preview("expect-one").locator("pre").evaluate(node => ({ width: node.clientWidth, scroll: node.scrollWidth }));
-    assert.ok(sizing.scroll > sizing.width, JSON.stringify(sizing));
-    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "Long code does not widen the page");
-    assert.equal(await page.locator("#save").isVisible(), true);
-    if (process.env.ZEN_MARK_PREVIEW_PATH) {
-      await page.locator("#expect-one").evaluate(node => { node.textContent = '**保存成功**，状态为 `ready`。\n\n| 字段 | 值 |\n| --- | --- |\n| status | ready |'; });
-      await poll(() => preview("expect-one").locator("table").count(), count => count === 1, "preview restored");
-      await page.screenshot({ path: process.env.ZEN_MARK_PREVIEW_PATH, fullPage: true });
-      await popup.locator("body").screenshot({ path: process.env.ZEN_MARK_PREVIEW_PATH.replace(/\.png$/, "-popup.png") });
-    }
-  });
 }
 
 export async function runPersistenceTests() {

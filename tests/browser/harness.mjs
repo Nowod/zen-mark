@@ -18,7 +18,6 @@ await writeFile(join(extension, "manifest.json"), JSON.stringify(manifest));
 const fixtures = Object.fromEntries(await Promise.all(["execution", "detail", "classic", "edit", "bug"].map(async name =>
   [name, await readFile(join(root, `tests/fixtures/${name}.html`), "utf8")])));
 const defaults = { precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 };
-const testFilter = process.env.ZEN_MARK_TEST_FILTER ? new RegExp(process.env.ZEN_MARK_TEST_FILTER) : null;
 let context;
 let worker;
 let page;
@@ -98,24 +97,9 @@ async function enabled(value) {
 }
 const go = async (path = "/zentao/testtask-cases-1.html") => { await page.goto(`https://zentao.test${path}`); };
 async function check(name, run, reset = true) {
-  if (testFilter && !testFilter.test(name)) return;
   if (reset) { await setFields(); await enabled(true); await go(); await rendered("step-one"); }
   await run();
   console.log(`PASS ${++passed}: ${name}`);
-}
-
-async function contentWorld(expression) {
-  const session = await context.newCDPSession(page);
-  const worlds = [];
-  session.on("Runtime.executionContextCreated", ({ context }) => worlds.push(context));
-  try {
-    await session.send("Runtime.enable");
-    const world = worlds.find(item => item.name.includes(extensionId) || item.origin.includes(extensionId));
-    assert.ok(world, "Extension isolated world exists");
-    const result = await session.send("Runtime.evaluate", { contextId: world.id, expression, awaitPromise: true, returnByValue: true });
-    assert.equal(result.exceptionDetails, undefined, result.exceptionDetails?.exception?.description);
-    return result.result.value;
-  } finally { await session.detach(); }
 }
 
 async function readClipboard(target = page) {
@@ -124,10 +108,9 @@ async function readClipboard(target = page) {
   return target.evaluate(() => navigator.clipboard.readText());
 }
 
-
 export async function close() {
   await context?.close();
   await rm(temporary, { recursive: true, force: true });
 }
 
-export { fixtures, defaults, context, worker, page, popup, extensionId, passed, errors, poll, launch, hosts, previews, preview, rendered, text, send, setFields, enabled, go, check, contentWorld, readClipboard };
+export { fixtures, defaults, context, worker, page, popup, extensionId, passed, errors, poll, launch, hosts, previews, preview, rendered, text, send, setFields, enabled, go, check, readClipboard };

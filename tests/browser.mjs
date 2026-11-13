@@ -11,7 +11,7 @@ try {
   await runCopyTests();
   await runPersistenceTests();
   assert.deepEqual(errors, [], "No unhandled errors on test pages");
-  assert.ok(passed > 0, "At least one browser scenario matched the selected filter");
+  assert.ok(passed > 0, "Browser scenarios ran");
   console.log(`\n${passed} browser scenarios passed with the actual unpacked extension.`);
 } finally {
   await close();
