@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-test("真实后台消息：网站授权、动态注册、两个选项及来源隔离", async t => {
+test("真实后台消息：网站授权、动态注册、渲染选项及来源隔离", async t => {
   const store = {};
   const scripts = new Map();
   const permissions = new Set();
@@ -39,7 +39,7 @@ test("真实后台消息：网站授权、动态注册、两个选项及来源�
       const status = await send({ type: "STATUS", origin: "https://a.test" });
       assert.deepEqual(storageAccess, { accessLevel: "TRUSTED_CONTEXTS" });
       assert.equal(status.enabled, false);
-      assert.deepEqual(status.settings, { enabledOrigins: [], fields: { precondition: true, steps: true } });
+      assert.deepEqual(status.settings, { enabledOrigins: [], fields: { precondition: true, steps: true, bugSteps: true, copyCase: true, doubleSpacing: true } });
       assert.equal(scripts.size, 0);
       assert.equal((await send({ type: "GET_STATE" }, content())).enabled, false);
       assert.equal((await send({ type: "STATUS", origin: "https://a.test" }, { ...popup, tab: { id: 2 } })).ok, true);
@@ -57,9 +57,9 @@ test("真实后台消息：网站授权、动态注册、两个选项及来源�
       assert.equal((await send({ type: "GET_STATE" }, content("https://a.test:8443/testcase-view-1.html"))).enabled, false);
       assert.equal((await send({ type: "GET_STATE" }, content("https://b.test/testcase-view-1.html"))).enabled, false);
     });
-    await t.test("网页只能读取本身的启用状态和两个选项，不能读全部网站或改设置", async () => {
+    await t.test("网页只能读取本身的启用状态和渲染选项，不能读全部网站或改设置", async () => {
       assert.equal((await send({ type: "STATUS" }, content())).error, "FORBIDDEN");
-      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false, steps: false } }, content())).error, "FORBIDDEN");
+      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false, steps: false, bugSteps: false } }, content())).error, "FORBIDDEN");
       const state = await send({ type: "GET_STATE" }, content());
       assert.deepEqual(Object.keys(state).sort(), ["enabled", "fields", "ok"]);
       assert.equal((await send({ type: "GET_STATE" }, { ...content(), id: "other-id" })).error, "FORBIDDEN");
@@ -69,12 +69,13 @@ test("真实后台消息：网站授权、动态注册、两个选项及来源�
       assert.equal((await send({ type: "GET_STATE" }, sender)).enabled, false);
       assert.equal((await send({ type: "GET_STATE" }, popup)).enabled, false);
     });
-    await t.test("两个渲染选项独立保存，不接受缺失或非布尔参数", async () => {
-      const saved = await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true } });
-      assert.deepEqual(saved.settings.fields, { precondition: false, steps: true });
+    await t.test("渲染与功能选项独立保存，不接受缺失或非布尔参数", async () => {
+      const saved = await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false } });
+      assert.deepEqual(saved.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false });
       const snapshot = structuredClone(store);
       assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false } })).error, "INVALID_SETTING");
-      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: "false", steps: true } })).error, "INVALID_SETTING");
+      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: false, steps: true } })).error, "INVALID_SETTING");
+      assert.equal((await send({ type: "SET_FIELDS", fields: { precondition: "false", steps: true, bugSteps: false, copyCase: false, doubleSpacing: false } })).error, "INVALID_SETTING");
       assert.deepEqual(store, snapshot);
     });
     await t.test("写入失败时恢复原动态注册；后续请求仍可正常工作", async () => {
@@ -89,11 +90,11 @@ test("真实后台消息：网站授权、动态注册、两个选项及来源�
       failRegister = false;
       assert.deepEqual(store.settings.enabledOrigins, ["https://a.test"]);
     });
-    await t.test("关闭网站撤销动态注入，保留两个选项的选择", async () => {
+    await t.test("关闭网站撤销动态注入，保留渲染选项的选择", async () => {
       const result = await send({ type: "SET_SITE", origin: "https://a.test", enabled: false });
       assert.equal(result.enabled, false);
       assert.equal(scripts.size, 0);
-      assert.deepEqual(result.settings.fields, { precondition: false, steps: true });
+      assert.deepEqual(result.settings.fields, { precondition: false, steps: true, bugSteps: false, copyCase: false, doubleSpacing: false });
     });
     await t.test("撤销主机权限后不再视为启用，重新同步会清理注册", async () => {
       await send({ type: "SET_SITE", origin: "https://a.test", enabled: true });

@@ -5,11 +5,18 @@
   const preLabels = new Set(["前置条件", "前置條件", "前提条件", "precondition", "preconditions"]);
   const stepLabels = new Set(["步骤", "步驟", "操作步骤", "步骤描述", "step", "steps", "stepdescription"]);
   const expectLabels = new Set(["预期", "預期", "预期结果", "預期結果", "期望结果", "expect", "expected", "expectedresult", "expectedresults"]);
+  const bugLabels = new Set(["重现步骤", "重現步驟", "复现步骤", "復現步驟", "stepstoreproduce", "reprosteps"]);
 
   function viewRoute() {
     const url = new URL(location.href);
     return /(?:^|\/)(?:testcase|testtask)[-/](?:view|runcase)(?:[-/.]|$)/i.test(url.pathname)
       || (/^(testcase|testtask)$/i.test(url.searchParams.get("m") || "") && /^(view|runcase)$/i.test(url.searchParams.get("f") || ""));
+  }
+
+  function bugViewRoute() {
+    const url = new URL(location.href);
+    return /(?:^|\/)bug[-/]view(?:[-/.]|$)/i.test(url.pathname)
+      || (/^bug$/i.test(url.searchParams.get("m") || "") && /^view$/i.test(url.searchParams.get("f") || ""));
   }
 
   function safe(element) {
@@ -24,12 +31,22 @@
       && /^\d+(?:[.．-]\d+)*[.．、)]?$/.test(node.textContent.trim());
   }
 
-  function find(root = document, fields = { precondition: true, steps: true }) {
+  function find(root = document, options = globalThis.ZenMarkMarkdown.optionDefaults) {
     const targets = new Map();
     const hasCase = viewRoute() || root.querySelector("#caseStepForm, #stepsTable");
-    if (!hasCase) return targets;
+    const hasBug = bugViewRoute();
+    if (!hasCase && !hasBug) return targets;
     const add = (element, kind) => { if (safe(element)) targets.set(element, kind); };
-    if (fields.precondition) {
+    if (hasBug && options.bugSteps) {
+      for (const section of root.querySelectorAll(".detail-section, .detail, fieldset")) {
+        const title = section.querySelector(":scope > .detail-section-title, :scope > .detail-title, :scope > legend");
+        if (!bugLabels.has(label(title))) continue;
+        const content = section.querySelector(":scope > .detail-section-content, :scope > .detail-content");
+        add(content?.querySelector(":scope > .article") || content, "bugSteps");
+      }
+    }
+    if (!hasCase) return targets;
+    if (options.precondition) {
       for (const caption of root.querySelectorAll("td.case-precondition, th.case-precondition")) add(caption.nextElementSibling, "precondition");
       for (const section of root.querySelectorAll(".detail-section, .detail, fieldset")) {
         const title = section.querySelector(":scope > .detail-section-title, :scope > .detail-title, :scope > legend");
@@ -43,7 +60,7 @@
         }
       }
     }
-    if (fields.steps) {
+    if (options.steps) {
       for (const row of root.querySelectorAll("#stepsTable .steps-body > .step")) {
         const cells = [...row.children];
         add(cells[0], "steps");

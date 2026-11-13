@@ -82,6 +82,56 @@ async function writeText(text) {
   if (!copyWithCommand(text)) throw new Error("COPY_FAILED");
 }
 
+export function createCopyButton(readText, idleLabel) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "code-copy";
+  const icon = document.createElement("span");
+  icon.className = "copy-icon";
+  icon.setAttribute("aria-hidden", "true");
+  const label = document.createElement("span");
+  label.className = "copy-status";
+  label.setAttribute("role", "status");
+  label.setAttribute("aria-live", "polite");
+  button.append(icon, label);
+  let busy = false;
+  let disposed = false;
+  let timer;
+  function status(state) {
+    button.dataset.state = state;
+    const message = state === "success" ? "已复制" : state === "error" ? "复制失败" : "复制";
+    label.textContent = message;
+    icon.classList.toggle("copy-icon-windows", state === "idle" && windowsCopy);
+    icon.replaceChildren();
+    if (state !== "idle") icon.textContent = state === "success" ? "✓" : "!";
+    else if (!windowsCopy) icon.append(fallbackIcon());
+    button.setAttribute("aria-label", state === "idle" ? idleLabel : message);
+  }
+  button.addEventListener("mousedown", event => event.preventDefault());
+  const copy = async event => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (busy || disposed || !event.isTrusted) return;
+    busy = true;
+    button.setAttribute("aria-disabled", "true");
+    button.setAttribute("aria-busy", "true");
+    clearTimeout(timer);
+    try {
+      await writeText(readText());
+      if (!disposed) status("success");
+    } catch { if (!disposed) status("error"); }
+    finally {
+      busy = false;
+      button.removeAttribute("aria-disabled");
+      button.removeAttribute("aria-busy");
+      if (!disposed) timer = setTimeout(() => status("idle"), 1400);
+    }
+  };
+  button.addEventListener("click", copy);
+  status("idle");
+  return { button, copy, dispose() { disposed = true; clearTimeout(timer); } };
+}
+
 export function decorateCode(container) {
   const cleanup = [];
   for (const code of container.querySelectorAll("code")) {
@@ -90,57 +140,12 @@ export function decorateCode(container) {
     const content = block ? code.parentElement : code;
     const wrapper = document.createElement(block ? "div" : "span");
     wrapper.className = block ? "code-block" : "code-inline";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "code-copy";
-    const icon = document.createElement("span");
-    icon.className = "copy-icon";
-    icon.setAttribute("aria-hidden", "true");
-    const label = document.createElement("span");
-    label.className = "copy-status";
-    label.setAttribute("role", "status");
-    label.setAttribute("aria-live", "polite");
-    button.append(icon, label);
-    let busy = false;
-    let timer;
-    let close = () => {};
-    function status(state) {
-      button.dataset.state = state;
-      const message = state === "success" ? "已复制" : state === "error" ? "复制失败" : "复制";
-      label.textContent = message;
-      icon.classList.toggle("copy-icon-windows", state === "idle" && windowsCopy);
-      icon.replaceChildren();
-      if (state !== "idle") icon.textContent = state === "success" ? "✓" : "!";
-      else if (!windowsCopy) icon.append(fallbackIcon());
-      button.setAttribute("aria-label", state === "idle" ? block ? "复制代码块" : "复制代码" : message);
-    }
-    button.addEventListener("mousedown", event => event.preventDefault());
-    const copy = async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (busy || !event.isTrusted) return;
-      busy = true;
-      button.setAttribute("aria-disabled", "true");
-      button.setAttribute("aria-busy", "true");
-      clearTimeout(timer);
-      try {
-        // Read the code element itself: labels and Markdown delimiters are excluded.
-        await writeText(code.textContent);
-        status("success");
-      } catch { status("error"); }
-      finally {
-        busy = false;
-        button.removeAttribute("aria-disabled");
-        button.removeAttribute("aria-busy");
-        timer = setTimeout(() => status("idle"), 1400);
-      }
-    };
-    button.addEventListener("click", copy);
-    if (!block) close = floatInline(wrapper, code, button, copy);
-    status("idle");
+    // Read the code element itself: labels and Markdown delimiters are excluded.
+    const control = createCopyButton(() => code.textContent, block ? "复制代码块" : "复制代码");
+    const close = block ? () => {} : floatInline(wrapper, code, control.button, control.copy);
     content.replaceWith(wrapper);
-    wrapper.append(content, button);
-    cleanup.push(() => { clearTimeout(timer); close(); });
+    wrapper.append(content, control.button);
+    cleanup.push(() => { control.dispose(); close(); });
   }
   return () => cleanup.forEach(dispose => dispose());
 }

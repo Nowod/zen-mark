@@ -2,6 +2,9 @@ import { Marked } from "marked";
 import createDOMPurify from "dompurify";
 import styles from "./markdown.css";
 import { decorateCode } from "./copy.js";
+import { createCaseCopier } from "./case-copy.js";
+import { fragmentText } from "./plain-text.js";
+import { OPTION_DEFAULTS } from "../extension/settings.js";
 
 const escapeHTML = text => text.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const parser = new Marked({ gfm: true, breaks: true, renderer: {
@@ -98,4 +101,6 @@ function fragment(source) {
   return clean;
 }
 
-globalThis.ZenMarkMarkdown = Object.freeze({ sourceText, fragment, styles, decorateCode });
+const plainText = source => fragmentText(fragment(source));
+const syncCaseCopy = createCaseCopier({ sourceText, plainText, styles });
+globalThis.ZenMarkMarkdown = Object.freeze({ sourceText, fragment, styles, decorateCode, syncCaseCopy, optionDefaults: OPTION_DEFAULTS });

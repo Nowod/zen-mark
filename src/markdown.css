@@ -1,4 +1,5 @@
-:host { display: block; min-width: 0; max-width: 100%; flex: 1 1 0%; color: inherit; font: inherit; line-height: 2; white-space: normal; text-align: start; }
+:host { display: block; min-width: 0; max-width: 100%; flex: 1 1 0%; color: inherit; font: inherit; line-height: inherit; white-space: normal; text-align: start; }
+:host([data-zen-mark-double-spacing]) { line-height: 2; }
 * { box-sizing: border-box; }
 .markdown { overflow-x: auto; overflow-wrap: anywhere; padding: 0 1px; }
 .markdown > :first-child { margin-top: 0; }
@@ -41,4 +42,6 @@ hr { border: 0; border-top: 1px solid #dce2eb; margin: 1em 0; }
 .copy-icon-windows::before { content: "\e8c8"; }
 .copy-icon-windows::after { content: "\e8c8"; position: absolute; inset: 0; color: #0078d4; clip-path: inset(0 0 20% 32%); }
 .copy-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+:host([data-zen-mark-copy-case]) { display: inline-flex; flex: 0 0 auto; align-items: center; margin-inline-start: 6px; }
+.case-copy.code-copy { position: static; opacity: 1; pointer-events: auto; }
 @media (hover: none) { .code-copy { opacity: 1; pointer-events: auto; } }

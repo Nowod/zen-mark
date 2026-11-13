@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "为禅道用例的前置条件、步骤、预期提供 Markdown 阅读视图。",
+  "description": "为禅道用例与 Bug 详情提供 Markdown 阅读视图。",
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",

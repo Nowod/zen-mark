@@ -7,7 +7,7 @@
   styles.replaceSync(Markdown.styles);
   const managed = new Map();
   let enabled = false;
-  let fields = { precondition: true, steps: true };
+  let options = Markdown.optionDefaults;
   let scheduled = false;
   let readId = 0;
   const observer = new MutationObserver(mutations => {
@@ -35,6 +35,7 @@
       state = null;
     }
     if (state) {
+      state.host.toggleAttribute("data-zen-mark-double-spacing", options.doubleSpacing);
       for (const node of [...element.childNodes]) {
         if (node !== state.source && node !== state.host && !Targets.stepNumber(node, element)) state.source.append(node);
       }
@@ -53,6 +54,7 @@
       // ZenTao reserves direct span children of .step-id for muted step numbers.
       const host = document.createElement("div");
       host.setAttribute("data-zen-mark-view", kind);
+      host.toggleAttribute("data-zen-mark-double-spacing", options.doubleSpacing);
       const shadow = host.attachShadow({ mode: "open" });
       shadow.adoptedStyleSheets = [styles];
       const body = document.createElement("div");
@@ -73,7 +75,7 @@
     scheduled = false;
     observer.disconnect();
     try {
-      const targets = enabled ? Targets.find(document, fields) : new Map();
+      const targets = enabled ? Targets.find(document, options) : new Map();
       for (const [element, state] of managed) {
         if (!element.isConnected || !targets.has(element)) restore(element, state);
       }
@@ -81,6 +83,7 @@
         try { render(element, kind); }
         catch { const state = managed.get(element); if (state) restore(element, state); }
       }
+      Markdown.syncCaseCopy(enabled && options.copyCase);
     } finally { if (enabled) observe(); }
   }
 
@@ -97,7 +100,7 @@
       const state = await chrome.runtime.sendMessage({ type: "GET_STATE" });
       if (id !== readId || !state?.ok) return;
       enabled = state.enabled === true;
-      fields = state.fields;
+      options = state.fields;
       flush();
     } catch { /* Preserve the current view while the extension worker restarts. */ }
   }

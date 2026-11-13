@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "禅阅 · ZenMark",
   "version": "1.0.0",
-  "description": "在禅道用例执行弹窗和详情中渲染 Markdown，支持前置条件与用例步骤。",
+  "description": "在禅道用例执行弹窗、用例详情和 Bug 详情中渲染 Markdown。",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "scripting", "activeTab"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],

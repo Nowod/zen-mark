@@ -1,7 +1,7 @@
-import { hostPattern, webOrigin } from "./settings.js";
+import { OPTION_DEFAULTS, hostPattern, webOrigin } from "./settings.js";
 
 const $ = id => document.getElementById(id);
-const keys = ["precondition", "steps"];
+const optionKeys = Object.keys(OPTION_DEFAULTS);
 let origin = null;
 let settings = null;
 let enabled = false;
@@ -20,18 +20,22 @@ function render(result) {
   $("site-enabled").checked = enabled;
   $("site-enabled").disabled = busy || !origin;
   $("fields").disabled = busy || !settings;
-  for (const key of keys) $("field-" + key).checked = settings?.fields[key] ?? true;
+  for (const key of optionKeys) $("field-" + key).checked = settings?.fields[key] ?? OPTION_DEFAULTS[key];
+}
+
+function beginUpdate() {
+  busy = true;
+  readId++;
+  $("status").textContent = "";
+  $("site-enabled").disabled = true;
+  $("fields").disabled = true;
 }
 
 $("site-enabled").addEventListener("change", async event => {
   if (busy || !origin) return;
   const next = event.target.checked;
   // Request access directly in the switch's user gesture, before the first await.
-  busy = true;
-  readId++;
-  $("status").textContent = "";
-  $("site-enabled").disabled = true;
-  $("fields").disabled = true;
+  beginUpdate();
   try {
     if (next && !await chrome.permissions.request({ origins: [hostPattern(origin)] })) { $("status").textContent = "未授权，网站保持关闭"; return; }
     const result = await send("SET_SITE", { enabled: next });
@@ -43,13 +47,9 @@ $("site-enabled").addEventListener("change", async event => {
 
 $("fields").addEventListener("change", async () => {
   if (busy) return;
-  const fields = Object.fromEntries(keys.map(key => [key, $("field-" + key).checked]));
-  busy = true;
-  readId++;
-  $("site-enabled").disabled = true;
-  $("fields").disabled = true;
-  $("status").textContent = "";
-  try { render(await send("SET_FIELDS", { fields })); }
+  const options = Object.fromEntries(optionKeys.map(key => [key, $("field-" + key).checked]));
+  beginUpdate();
+  try { render(await send("SET_FIELDS", { fields: options })); }
   catch { $("status").textContent = "保存失败，请重试"; }
   finally { busy = false; render({}); }
 });

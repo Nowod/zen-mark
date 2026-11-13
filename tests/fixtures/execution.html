@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="UTF-8"><title>执行用例</title>
 <style>body{font:13px/1.6 sans-serif;color:#344058;margin:24px}.modal-body{max-width:1050px;padding:18px;border:1px solid #e0e6ee}table{width:100%;border-collapse:collapse}td{vertical-align:top;padding:8px}.case-precondition{width:80px}.step>td:first-child{width:32%}.step>td:nth-child(2){width:32%}.border{border:1px solid #dde3ed}.inputGroup{display:flex}.step-item-id{margin-right:8px;flex-shrink:0}.whitespace-pre-line{white-space:pre-line}.wrap{min-width:0}.hidden{display:none}.result-td{width:100px}.real-td textarea{width:100%}form>table{margin-top:20px}</style>
-<body><div class="modal-body scrollbar-hover">
+<body><div class="modal-content"><div class="modal-header"><div class="flex items-center overflow-hidden w-full"><div class="whitespace-nowrap">执行用例</div><div class="entity-label space-x-1.5 overflow-hidden nowrap flex items-center pl-2"><span class="entity-title entity-title-1" title="示例执行用例 `AGE`">示例执行用例 `AGE`</span><span class="label label-id">1</span></div></div></div><div class="modal-body scrollbar-hover">
 <table class="mb-6"><tbody><tr><td class="case-precondition w-16 align-top">前置条件</td><td id="precondition">- 准备版本 `DEMO_V1`，并启用 **测试规则**。<br>
   - 使用独立的示例数据。<br>
   - 保留变量 `${example.value}` 和 `A_B`。</td></tr></tbody></table>
 <form class="form form-ajax no-morph" id="caseStepForm" action="/zentao/testtask-runCase-1.html" method="post">
-<div class="modal hidden" id="fileModal1"><div class="modal-body"><div class="file-selector"><label>选择文件<input type="file" name="files1[]" id="file-input"></label><button type="button" id="file-save">保存</button></div></div></div>
+<div class="modal hidden" id="fileModal1"><div class="modal-content"><div class="modal-header"><div class="modal-title">上传附件</div></div><div class="modal-body"><div class="file-selector"><label>选择文件<input type="file" name="files1[]" id="file-input"></label><button type="button" id="file-save">保存</button></div></div></div></div>
 <table class="table"><thead><tr><td>步骤</td><td>预期</td><td class="result-td">测试结果</td><td>实际情况</td></tr></thead><tbody>
 <tr class="step step-step"><td class="text-left border"><div class="inputGroup row pl-0"><span class="step-item-id mr-2">1</span><div class="wrap break-all whitespace-pre-line" id="step-one">## 执行操作
 
@@ -27,7 +27,7 @@
 
 > 保留原始数据。</div></div></td><td class="border whitespace-pre-line" id="expect-two">没有修改 `${example.value}`，可查看 [使用说明](/help)。</td><td><select name="result[2]"><option value="pass">通过</option></select></td><td><textarea name="real[2]"></textarea></td></tr>
 <tr><td colspan="4" class="action-td"><button type="submit" id="save">保存</button><a href="/zentao/testtask-runCase-2.html" id="next">下一个</a><input type="hidden" name="case" value="1"><input type="hidden" name="version" value="1"></td></tr>
-</tbody></table></form><div id="resultsContainer"><h3>测试结果</h3><p>共执行 0 次</p><table></table></div></div>
+</tbody></table></form><div id="resultsContainer"><h3>测试结果</h3><p>共执行 0 次</p><table></table></div></div></div>
 <script>
 document.querySelector('#caseStepForm').addEventListener('submit',event=>{event.preventDefault();window.saved=Object.fromEntries(new FormData(event.currentTarget));});
 document.querySelector('#attachment').addEventListener('click',()=>{window.attachmentClicks=(window.attachmentClicks||0)+1;});

@@ -15,12 +15,19 @@
       <input id="site-enabled" type="checkbox" role="switch" disabled>
       <span class="switch" aria-hidden="true"></span>
     </label>
-    <fieldset id="fields" disabled>
-      <legend>渲染内容</legend>
-      <label><input id="field-precondition" type="checkbox">前置条件</label>
-      <label><input id="field-steps" type="checkbox"><span>用例步骤<small>包含步骤和预期</small></span></label>
+    <fieldset id="fields" aria-label="功能设置" disabled>
+      <fieldset class="option-group">
+        <legend>渲染内容</legend>
+        <label><input id="field-precondition" type="checkbox">前置条件</label>
+        <label><input id="field-steps" type="checkbox">步骤与预期</label>
+        <label><input id="field-bugSteps" type="checkbox">Bug 重现步骤</label>
+      </fieldset>
+      <fieldset class="option-group">
+        <legend>辅助功能</legend>
+        <label><input id="field-copyCase" type="checkbox">整体复制</label>
+        <label><input id="field-doubleSpacing" type="checkbox">双倍行距</label>
+      </fieldset>
     </fieldset>
-    <footer>仅改变显示，不修改用例</footer>
     <p id="status" role="status" aria-live="polite"></p>
   </main>
 </body>
