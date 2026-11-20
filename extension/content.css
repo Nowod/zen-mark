@@ -1,3 +1,17 @@
-[data-zen-mark-source] { display: none !important; }
+[data-zen-mark-source], [data-zen-mark-execution-layout="hidden"] { display: none !important; }
 [data-zen-mark-view] { display: block; flex: 1 1 0%; min-width: 0; max-width: 100%; white-space: normal; }
 .inputGroup > .wrap:has(> [data-zen-mark-view]), .input-group > .wrap:has(> [data-zen-mark-view]) { flex: 1 1 0%; min-width: 0; }
+
+[data-zen-mark-execution-layout="table"] { width: 100% !important; table-layout: fixed !important; }
+[data-zen-mark-execution-layout="equal-width"] { width: auto !important; min-width: 0 !important; overflow-wrap: anywhere; }
+/* Keep the column in the table grid so spanning cells do not create an empty track. */
+[data-zen-mark-execution-layout="zero-width"] { width: 0 !important; min-width: 0 !important; }
+:is(th, td)[data-zen-mark-execution-layout="zero-width"] {
+  visibility: hidden !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden;
+  font-size: 0;
+  line-height: 0;
+}
+:is(th, td)[data-zen-mark-execution-layout="zero-width"] > * { display: none !important; }

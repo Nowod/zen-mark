@@ -1,5 +1,5 @@
 export const LINE_HEIGHTS = Object.freeze(["default", 1.5, 2, 2.5, 3]);
-export const OPTION_DEFAULTS = Object.freeze({ precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 });
+export const OPTION_DEFAULTS = Object.freeze({ precondition: true, steps: true, bugSteps: true, copyCase: true, hideActual: false, equalStepWidths: true, lineHeight: 2 });
 export const BOOLEAN_OPTION_KEYS = Object.freeze(Object.keys(OPTION_DEFAULTS).filter(key => typeof OPTION_DEFAULTS[key] === "boolean"));
 
 export function validOptions(value) {

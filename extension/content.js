@@ -6,6 +6,8 @@
   const styles = new CSSStyleSheet();
   styles.replaceSync(Markdown.styles);
   const managed = new Map();
+  const layoutAttribute = "data-zen-mark-execution-layout";
+  let executionLayout = new Map();
   let enabled = false;
   let options = Markdown.optionDefaults;
   let scheduled = false;
@@ -71,6 +73,17 @@
     state.text = source;
   }
 
+  function syncExecutionLayout() {
+    const elements = enabled ? Targets.findExecutionLayout(document, options) : new Map();
+    for (const element of executionLayout.keys()) {
+      if (!elements.has(element)) element.removeAttribute(layoutAttribute);
+    }
+    for (const [element, role] of elements) {
+      if (element.getAttribute(layoutAttribute) !== role) element.setAttribute(layoutAttribute, role);
+    }
+    executionLayout = elements;
+  }
+
   function flush() {
     scheduled = false;
     observer.disconnect();
@@ -83,6 +96,7 @@
         try { render(element, kind); }
         catch { const state = managed.get(element); if (state) restore(element, state); }
       }
+      syncExecutionLayout();
       Markdown.syncCaseCopy(enabled && options.copyCase);
     } finally { if (enabled) observe(); }
   }

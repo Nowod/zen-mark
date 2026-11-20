@@ -6,7 +6,8 @@ export async function runSettingsTests() {
     assert.equal(await previews(), 0);
     assert.equal(await popup.locator("#site-name").textContent(), "zentao.test");
     assert.equal(await popup.locator("#site-enabled").isChecked(), false);
-    assert.deepEqual(await popup.locator("#fields input").evaluateAll(inputs => inputs.map(input => [input.id, input.checked])), [["field-precondition", true], ["field-steps", true], ["field-bugSteps", true], ["field-copyCase", true]]);
+    assert.deepEqual(await popup.locator("#fields input").evaluateAll(inputs => inputs.map(input => [input.id, input.checked])),
+      [["field-precondition", true], ["field-steps", true], ["field-bugSteps", true], ["field-copyCase", true], ["field-hideActual", false], ["field-equalStepWidths", true]]);
     assert.deepEqual(await popup.locator("#fields > .option-group > legend").allTextContents(), ["渲染内容", "辅助功能"]);
     assert.equal(await popup.locator('label:has(#field-steps)').textContent(), "步骤与预期");
     assert.equal(await popup.locator("#field-lineHeight").inputValue(), "2");
@@ -52,13 +53,64 @@ export async function runSettingsTests() {
     await enabled(false); await go();
     const original = await page.locator("body > .modal-content > .modal-body").innerHTML();
     await enabled(true); await rendered("step-one");
-    await setFields({ precondition: false, steps: true }); await rendered("precondition", false);
+    await setFields({ precondition: false, steps: true, hideActual: true }); await rendered("precondition", false);
+    await page.locator("#real-one").waitFor({ state: "hidden" });
     await enabled(false); await poll(previews, count => count === 0, "source restored");
     assert.equal(await page.locator("body > .modal-content > .modal-body").innerHTML(), original);
     assert.deepEqual(await worker.evaluate(() => chrome.scripting.getRegisteredContentScripts()), []);
     await page.reload(); assert.equal(await previews(), 0);
     await enabled(true); await rendered("step-one");
     assert.equal(await preview("precondition").count(), 0);
+    assert.equal(await page.locator("#real-one").isVisible(), false);
+  });
+
+  await check("等宽和隐藏实际情况可独立切换，恢复后保留输入和附件入口", async () => {
+    await popup.reload(); await popup.waitForFunction(() => !document.querySelector("#fields").disabled);
+    const hideActual = popup.getByRole("checkbox", { name: "隐藏实际情况列" });
+    const equalStepWidths = popup.getByRole("checkbox", { name: "步骤与预期等宽" });
+    const table = page.locator("#caseStepForm > table");
+    const heading = table.locator("thead").getByText("实际情况", { exact: true });
+    const actual = page.locator("#real-one");
+    const widths = () => table.locator("thead td").evaluateAll(cells => cells.map(cell => cell.getBoundingClientRect().width));
+    const equal = ([step, expect]) => step > 0 && Math.abs(step - expect) < 1;
+    const tableLayout = () => table.evaluate(node => getComputedStyle(node).tableLayout);
+    await table.evaluate(node => {
+      node.insertAdjacentHTML("afterbegin", '<colgroup><col style="width:18%"><col style="width:36%"><col><col style="width:25%"></colgroup>');
+      node.tHead.rows[0].cells[0].style.width = "25%";
+      node.tHead.rows[0].cells[1].style.width = "35%";
+    });
+    await actual.fill("已填写的实际情况");
+    await popup.locator("#field-steps").uncheck(); await rendered("step-one", false);
+    const visibleWidths = await poll(widths, equal, "Steps and expected results use equal widths with the actual column visible");
+    await hideActual.check();
+    await heading.waitFor({ state: "hidden" });
+    const hiddenWidths = await widths();
+    assert.ok(equal(hiddenWidths) && hiddenWidths[0] > visibleWidths[0] && hiddenWidths[3] < 1,
+      `Steps and expected results share the freed space: ${JSON.stringify(hiddenWidths)}`);
+    assert.deepEqual(await table.locator("thead td:visible").allTextContents(), ["步骤", "预期", "测试结果"]);
+    assert.equal(await table.locator('textarea[name^="real["]:visible').count(), 0);
+    assert.equal(await page.locator("#attachment").isVisible(), false);
+    await page.locator("#result-one").selectOption("fail");
+    await page.locator("#save").click();
+    const saved = await page.evaluate(() => window.saved);
+    assert.equal(saved["result[1]"], "fail");
+    assert.equal(saved["real[1]"], "已填写的实际情况");
+    await equalStepWidths.uncheck();
+    await poll(tableLayout, value => value === "auto", "Disabling equal widths restores native layout");
+    assert.equal(await heading.isVisible(), false);
+    assert.equal(await actual.isVisible(), false);
+    await hideActual.uncheck();
+    await heading.waitFor({ state: "visible" });
+    assert.equal(await actual.inputValue(), "已填写的实际情况");
+    assert.equal(equal(await widths()), false);
+    await page.locator("#attachment").click();
+    assert.equal(await page.evaluate(() => window.attachmentClicks), 1);
+    await equalStepWidths.check();
+    assert.deepEqual(await poll(widths, equal, "Reenabling equal widths keeps the actual column visible"), visibleWidths);
+    await table.evaluate(node => { node.closest(".modal-body").style.maxWidth = "760px"; });
+    const resizedWidths = await widths();
+    assert.ok(equal(resizedWidths) && resizedWidths[0] < visibleWidths[0],
+      `Steps and expected results resize together: ${JSON.stringify(resizedWidths)}`);
   });
 
   await check("正文行距五个档位即时生效并保存，复制开关与标题旁按钮独立", async () => {
@@ -103,7 +155,7 @@ export async function runSettingsTests() {
 
 export async function runPersistenceTests() {
   await check("刷新、重启浏览器后保留网站和渲染选项的选择", async () => {
-    await setFields({ precondition: false, steps: true, lineHeight: 2.5 });
+    await setFields({ precondition: false, steps: true, hideActual: true, equalStepWidths: false, lineHeight: 2.5 });
     await page.reload(); await rendered("step-one"); await rendered("precondition", false);
     await context.close(); await launch();
     try { await rendered("step-one"); await rendered("precondition", false); }
@@ -113,6 +165,10 @@ export async function runPersistenceTests() {
     }
     assert.equal(await popup.locator("#field-precondition").isChecked(), false);
     assert.equal(await popup.locator("#field-steps").isChecked(), true);
+    assert.equal(await popup.locator("#field-hideActual").isChecked(), true);
+    assert.equal(await popup.locator("#field-equalStepWidths").isChecked(), false);
+    assert.equal(await page.locator("#real-one").isVisible(), false);
+    assert.equal(await page.locator("#caseStepForm > table").evaluate(node => getComputedStyle(node).tableLayout), "auto");
     assert.equal(await popup.locator("#field-lineHeight").inputValue(), "2.5");
     const spacing = await preview("expect-one").locator(".markdown > p").evaluate(node => ({ line: getComputedStyle(node).lineHeight, size: getComputedStyle(node).fontSize }));
     assert.equal(parseFloat(spacing.line), parseFloat(spacing.size) * 2.5);

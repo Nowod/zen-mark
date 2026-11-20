@@ -84,11 +84,14 @@ export async function runRenderingTests() {
     assert.equal(await page.locator("#bug-steps").innerHTML(), original);
   });
 
-  await check("弹窗异步加入、下一个用例替换内容后自动渲染，不重复嵌套预览", async () => {
+  await check("弹窗异步加入、下一个用例替换内容后自动渲染并隐藏实际情况列", async () => {
+    await setFields({ hideActual: true });
+    await page.locator("#real-one").waitFor({ state: "hidden" });
     await page.evaluate(() => { document.querySelector(".modal-body").remove(); });
     await poll(previews, count => count === 0, "old modal removed");
     await page.evaluate(html => { document.body.insertAdjacentHTML("beforeend", new DOMParser().parseFromString(html, "text/html").querySelector(".modal-body").outerHTML); }, fixtures.execution);
     await rendered("step-one");
+    assert.equal(await page.locator("#real-one").isVisible(), false);
     await page.locator("#step-one").evaluate(node => { node.textContent = "下一条用例 `NEXT`"; });
     await poll(() => text("step-one"), value => value.includes("NEXT"), "new case rendered");
     assert.equal(await preview("step-one").locator("code").textContent(), "NEXT");

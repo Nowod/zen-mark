@@ -2,25 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { BOOLEAN_OPTION_KEYS, LINE_HEIGHTS, OPTION_DEFAULTS, normalizeSettings, validOptions, webOrigin, hostPattern } from "../extension/settings.js";
 
-test("渲染和整体复制默认开启，正文行距保留原来的 2 倍", () => {
-  assert.deepEqual(OPTION_DEFAULTS, { precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 });
+test("渲染、复制和等宽默认开启，实际情况列默认显示，正文行距为 2 倍", () => {
+  assert.deepEqual(OPTION_DEFAULTS, { precondition: true, steps: true, bugSteps: true, copyCase: true, hideActual: false, equalStepWidths: true, lineHeight: 2 });
   assert.deepEqual(LINE_HEIGHTS, ["default", 1.5, 2, 2.5, 3]);
   assert.deepEqual(normalizeSettings(null), { enabledOrigins: [], fields: OPTION_DEFAULTS });
 });
-test("选项可独立取消，全部取消也不恢复默认", () => {
+test("选项可独立切换，全部取消也不恢复默认", () => {
   for (const key of BOOLEAN_OPTION_KEYS) {
-    const fields = { ...OPTION_DEFAULTS, [key]: false };
+    const fields = { ...OPTION_DEFAULTS, [key]: !OPTION_DEFAULTS[key] };
     assert.deepEqual(normalizeSettings({ fields }).fields, fields);
   }
   const fields = { ...Object.fromEntries(BOOLEAN_OPTION_KEYS.map(key => [key, false])), lineHeight: "default" };
   assert.deepEqual(normalizeSettings({ fields }).fields, fields);
 });
-test("原有设置保留用例选项，新增功能默认开启", () => {
-  const previous = { enabledOrigins: ["https://a.test"], fields: { precondition: false, steps: false } };
+test("原有设置保留用例选项，缺失的选项使用默认值", () => {
+  const previous = { enabledOrigins: ["https://a.test"], fields: { precondition: false, steps: false, hideActual: true } };
   const snapshot = structuredClone(previous);
-  assert.deepEqual(normalizeSettings(previous), { enabledOrigins: ["https://a.test"], fields: { precondition: false, steps: false, bugSteps: true, copyCase: true, lineHeight: 2 } });
+  assert.deepEqual(normalizeSettings(previous), { enabledOrigins: ["https://a.test"], fields: { precondition: false, steps: false, bugSteps: true, copyCase: true, hideActual: true, equalStepWidths: true, lineHeight: 2 } });
   assert.deepEqual(normalizeSettings({ fields: { precondition: false, steps: false, bugSteps: false } }).fields,
-    { precondition: false, steps: false, bugSteps: false, copyCase: true, lineHeight: 2 });
+    { precondition: false, steps: false, bugSteps: false, copyCase: true, hideActual: false, equalStepWidths: true, lineHeight: 2 });
   assert.deepEqual(previous, snapshot);
 });
 test("旧行距勾选映射为 2 倍或页面默认，新的档位优先并且不改原对象", () => {
@@ -49,7 +49,7 @@ test("正文行距只接受五个档位，损坏值不会写入配置", () => {
   }
 });
 test("损坏选项采用默认，未知字段不会进入设置", () => {
-  assert.deepEqual(normalizeSettings({ fields: { precondition: "false", steps: null, expect: false } }).fields, OPTION_DEFAULTS);
+  assert.deepEqual(normalizeSettings({ fields: { precondition: "false", steps: null, hideActual: "true", expect: false } }).fields, OPTION_DEFAULTS);
 });
 test("网站默认关闭；按协议、子域和端口独立启用，移除非网页来源", () => {
   const input = { enabledOrigins: ["https://a.test/path", "https://a.test", "http://a.test", "https://a.test:8443", "https://b.a.test", "file:///tmp/a", "javascript:alert(1)", null] };

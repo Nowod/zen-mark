@@ -3,6 +3,7 @@ import { mkdtemp, rm, cp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { OPTION_DEFAULTS as defaults } from "../../extension/settings.js";
 
 const { chromium } = await import(process.env.ZEN_MARK_PLAYWRIGHT_MODULE || "playwright");
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -17,7 +18,6 @@ manifest.host_permissions = ["https://zentao.test/*", "http://zentao-http.test/*
 await writeFile(join(extension, "manifest.json"), JSON.stringify(manifest));
 const fixtures = Object.fromEntries(await Promise.all(["execution", "detail", "classic", "edit", "bug"].map(async name =>
   [name, await readFile(join(root, `tests/fixtures/${name}.html`), "utf8")])));
-const defaults = { precondition: true, steps: true, bugSteps: true, copyCase: true, lineHeight: 2 };
 let context;
 let worker;
 let page;

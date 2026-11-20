@@ -1,10 +1,14 @@
 (() => {
   "use strict";
   const controls = 'input, textarea, select, button, [contenteditable]:not([contenteditable="false"]), .ke-edit, .tox, .editor-content';
+  const executionTables = "#caseStepForm table";
   const label = element => (element?.textContent || "").replace(/[\s:：*＊]/g, "").toLowerCase();
   const preLabels = new Set(["前置条件", "前置條件", "前提条件", "precondition", "preconditions"]);
-  const stepLabels = new Set(["步骤", "步驟", "操作步骤", "步骤描述", "step", "steps", "stepdescription"]);
-  const expectLabels = new Set(["预期", "預期", "预期结果", "預期結果", "期望结果", "expect", "expected", "expectedresult", "expectedresults"]);
+  const stepColumnLabels = [
+    ["step", new Set(["步骤", "步驟", "操作步骤", "步骤描述", "step", "steps", "stepdescription"])],
+    ["expect", new Set(["预期", "預期", "预期结果", "預期結果", "期望结果", "expect", "expected", "expectedresult", "expectedresults"])],
+    ["actual", new Set(["实际情况", "實際情況", "实际结果", "實際結果", "actual", "actualsituation", "actualresult", "actualresults"])]
+  ];
   const bugLabels = new Set(["重现步骤", "重現步驟", "复现步骤", "復現步驟", "stepstoreproduce", "reprosteps"]);
 
   function viewRoute() {
@@ -29,6 +33,74 @@
     if (node.matches(".step-item-id")) return true;
     return element.matches(".step-id") && node === element.firstElementChild && node.matches("span.nowrap")
       && /^\d+(?:[.．-]\d+)*[.．、)]?$/.test(node.textContent.trim());
+  }
+
+  function stepTableLayout(table) {
+    const heading = table.tHead?.rows[0] || table.rows[0];
+    if (!heading) return null;
+    const columns = [];
+    let start = 0;
+    for (const cell of heading.cells) {
+      const text = label(cell);
+      const kind = stepColumnLabels.find(([, labels]) => labels.has(text))?.[0];
+      const end = start + cell.colSpan;
+      if (kind) columns.push({ cell, start, end, kind });
+      start = end;
+    }
+    if (!columns.some(column => column.kind === "step") || !columns.some(column => column.kind === "expect")) return null;
+    return { heading, columns };
+  }
+
+  function* cellsInColumns(table, heading, columns) {
+    let section;
+    const occupied = [];
+    for (const [index, row] of [...table.rows].entries()) {
+      if (row === heading || row.parentElement === table.tHead) continue;
+      if (section !== row.parentElement) {
+        section = row.parentElement;
+        occupied.length = 0;
+      }
+      let start = 0;
+      for (const cell of row.cells) {
+        while (occupied[start] > index) start++;
+        const end = start + cell.colSpan;
+        const until = cell.rowSpan ? index + cell.rowSpan : Infinity;
+        for (let column = start; column < end; column++) occupied[column] = until;
+        const match = columns.find(column => start >= column.start && end <= column.end);
+        if (match) yield [cell, match.kind];
+        start = end;
+      }
+    }
+  }
+
+  function findExecutionLayout(root, { hideActual, equalStepWidths }) {
+    const elements = new Map();
+    if (!hideActual && !equalStepWidths) return elements;
+    const hiddenRole = equalStepWidths ? "zero-width" : "hidden";
+    const role = kind => kind === "actual" ? hiddenRole : "equal-width";
+    for (const table of root.querySelectorAll(executionTables)) {
+      const layout = stepTableLayout(table);
+      if (!layout) continue;
+      const columns = layout.columns.filter(column => column.kind === "actual" ? hideActual : equalStepWidths);
+      if (!columns.length) continue;
+      const actual = columns.filter(column => column.kind === "actual");
+      const overlaps = (start, end) => columns.some(column => start < column.end && end > column.start);
+      if (equalStepWidths) elements.set(table, "table");
+      for (const { cell, kind } of columns) elements.set(cell, role(kind));
+      for (const [cell, kind] of cellsInColumns(table, layout.heading, columns)) elements.set(cell, role(kind));
+      let start = 0;
+      for (const group of table.querySelectorAll(":scope > colgroup")) {
+        const groupStart = start;
+        for (const col of group.children.length ? group.children : [group]) {
+          const end = start + col.span;
+          if (actual.some(column => start >= column.start && end <= column.end)) elements.set(col, hiddenRole);
+          else if (equalStepWidths && overlaps(start, end)) elements.set(col, "equal-width");
+          start = end;
+        }
+        if (equalStepWidths && group.children.length && overlaps(groupStart, start)) elements.set(group, "equal-width");
+      }
+    }
+    return elements;
   }
 
   function find(root = document, options = globalThis.ZenMarkMarkdown.optionDefaults) {
@@ -66,39 +138,18 @@
         add(cells[0], "steps");
         add(cells[1], "steps");
       }
-      for (const table of root.querySelectorAll("#caseStepForm table, table#steps, table.steps, #steps table")) {
-        const rows = [...table.rows];
-        const heading = table.tHead?.rows[0] || rows[0];
-        if (!heading) continue;
-        const columns = [];
-        let column = 0;
-        for (const cell of heading.cells) {
-          const kind = stepLabels.has(label(cell)) ? "step" : expectLabels.has(label(cell)) ? "expect" : null;
-          if (kind) columns.push({ start: column, end: column + cell.colSpan, kind });
-          column += cell.colSpan;
-        }
-        if (!columns.some(item => item.kind === "step") || !columns.some(item => item.kind === "expect")) continue;
-        const occupied = [];
-        for (let index = 0; index < rows.length; index++) {
-          const row = rows[index];
-          if (row === heading || row.parentElement === table.tHead) continue;
-          let start = 0;
-          for (const cell of row.cells) {
-            while (occupied[start] > index) start++;
-            const width = cell.colSpan;
-            const height = cell.rowSpan || rows.length - index;
-            for (let offset = 0; offset < width; offset++) occupied[start + offset] = index + height;
-            const match = columns.find(item => start >= item.start && start + width <= item.end);
-            if (match && !/^\s*\d+(?:[.．]\d+)*[.．、)]?\s*$/.test(cell.textContent)) {
-              const body = match.kind === "step" ? cell.querySelector(".inputGroup > .wrap, .input-group > .wrap, .step-desc, .step-description") : null;
-              add(body || cell, "steps");
-            }
-            start += width;
-          }
+      for (const table of root.querySelectorAll(`${executionTables}, table#steps, table.steps, #steps table`)) {
+        const layout = stepTableLayout(table);
+        if (!layout) continue;
+        const columns = layout.columns.filter(column => column.kind !== "actual");
+        for (const [cell, kind] of cellsInColumns(table, layout.heading, columns)) {
+          if (/^\s*\d+(?:[.．]\d+)*[.．、)]?\s*$/.test(cell.textContent)) continue;
+          const body = kind === "step" ? cell.querySelector(".inputGroup > .wrap, .input-group > .wrap, .step-desc, .step-description") : null;
+          add(body || cell, "steps");
         }
       }
     }
     return targets;
   }
-  globalThis.ZenMarkTargets = Object.freeze({ find, stepNumber });
+  globalThis.ZenMarkTargets = Object.freeze({ find, findExecutionLayout, stepNumber });
 })();
